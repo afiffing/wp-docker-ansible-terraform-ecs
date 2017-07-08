@@ -1,0 +1,32 @@
+{
+    "builders": [
+        {
+            "type": "docker",
+            "image": "afiffing/ansible:1.1",
+            "commit": true
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "ansible-local",
+            "playbook_dir": "ansible",
+            "playbook_file": "ansible/wordpress.yml"
+        }
+    ],
+    "post-processors": [
+        [
+            {
+                "type": "docker-tag",
+                "repository": "afiffing/wp-packer",
+                "tag": "1.1"
+            },
+            {
+                "type": "docker-push",
+                "login": "true",
+                "login_username": "your username",
+                "login_password": "use your own password",
+                "login_email": "youremail@gmail.com"
+            }
+        ]
+    ]
+}
