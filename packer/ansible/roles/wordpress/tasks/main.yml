@@ -1,31 +1,43 @@
 ---
 
+- name: Wordpress | Download
+  get_url:
+     url=https://wordpress.org/wordpress-{{ wordpress_version }}.tar.gz
+     dest=/wordpress.tar.gz
+     checksum=md5:{{ wordpress_md5 }}
+     validate_certs=no # Alpine 3.3 doesn't recognize Godaddy's CA.
+
+# faced difficulties in using unarchive module of ansible, cli came to the rescue.  
+
+- name: Extract archive
+  command: chdir=/ /bin/tar xvzf wordpress.tar.gz
 
 - name: Wordpress | dir move wordpres
-  command: 
-      mv /tmp/wordpress /usr/share/nginx/html/wordpress
+  command: "{{ item }}"
+  with_items:
+  - mv /wordpress /usr/share/nginx/html 
+  - rm -rf /wordpress.tar.gz
 
 - name: Wordpress | Set permissions 
   file:
      path=/usr/share/nginx/html/wordpress
      owner=nginx
      group=nginx
-     mode=777
+     mode=0775
      state=directory
      recurse=yes
 
 - name: Wordpress | Copy entrypoint.sh
   copy:
      src=entrypoint.sh
-     dest=/tmp/
-     mode=777
+     dest=/
+     mode=0775
 
 - name: Wordpress | Copy install-wp.sh
   copy:
-     src=install-wp.sh
-     dest=/tmp/
-     mode=777
-
+     src=install_wp.sh
+     dest=/
+     mode=0775
 
 - name: apk | Install curl
   apk: 

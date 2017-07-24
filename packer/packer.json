@@ -2,31 +2,32 @@
     "builders": [
         {
             "type": "docker",
-            "image": "afiffing/ansible:1.1",
-            "commit": true
+            "image": "afiffing/ansible:latest",
+            "commit": true,
+            "changes": [ "CMD [\"supervisord\"]"]
         }
     ],
     "provisioners": [
         {
             "type": "ansible-local",
             "playbook_dir": "ansible",
-            "playbook_file": "ansible/wordpress.yml"
+            "playbook_file": "ansible/nginx.yml"
         }
     ],
     "post-processors": [
         [
             {
                 "type": "docker-tag",
-                "repository": "afiffing/wp-packer",
+                "repository": "afiffing/ansible-nginx-wordpress",
                 "tag": "1.1"
             },
             {
                 "type": "docker-push",
                 "login": "true",
-                "login_username": "your username",
-                "login_password": "use your own password",
-                "login_email": "youremail@gmail.com"
+                "login_username": "your dockerhub username",
+                "login_password": "use your own dockerhub password"
             }
+            
         ]
     ]
 }

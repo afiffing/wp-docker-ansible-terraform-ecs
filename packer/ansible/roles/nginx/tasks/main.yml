@@ -2,7 +2,7 @@
 - name: Nginx | Installation
   apk: 
      name=nginx 
-     state=present 
+     state=latest
      update_cache=yes
 
 - name: Nginx | Setting config file nginx.conf

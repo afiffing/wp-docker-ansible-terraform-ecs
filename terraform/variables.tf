@@ -1,4 +1,21 @@
 
+variable "aws_access_key" {
+  description = "AWS access key"
+}
+
+variable "aws_secret_key" {
+  description = "AWS secret key"
+}
+
+variable "vpc_preconf_id" {
+  description = "VPC network"
+}
+
+variable "subnet_preconf_id" {
+  description = "VPC network"
+}
+
+
 variable "vpc_cidr_block" {
   description = "VPC network"
   default     = "172.31.0.0/16"
@@ -6,12 +23,12 @@ variable "vpc_cidr_block" {
 
 variable "public_subnet_cidr_block" {
   description = "Public Subnet"
-  default     = "172.31.0.0/16"
+  default     = "172.31.0.0/20"
 }
 
 variable "private_subnet_cidr_block" {
   description = "Private Subnet"
-  default     = "172.31.0.0/16"
+  default     = "172.31.0.0/20"
 }
 
 variable "region" {
@@ -32,7 +49,7 @@ variable "ecs_cluster_name" {
 variable "amis" {
   description = "ECS Container Instances AMIs"
   default = {
-    us-west-2      = "ami-a58d0dc5"
+    us-west-2      = "ami-57d9cd2e"
   }
 }
 
@@ -44,22 +61,24 @@ variable "instance_type" {
 
 variable "key_name" {
   description = "SSH key name to access the EC2 instances"
-  default = "random-keyname-ecs"
+}
+
+variable "db_host" {
+  description = "RDS DB hostname preconfigure"
 }
 
 variable "db_name" {
   description = "RDS DB name"
-  default = "wordpress_ansible"
+  default = "wp_ansible"
 }
 
 variable "db_user" {
   description = "RDS DB username"
-  default = "randomuser"
+  default = "testuser"
 }
 
 variable "db_password" {
   description = "RDS DB password"
-  default = "randompassword"
 }
 
 variable "wp_title" {
@@ -74,10 +93,8 @@ variable "wp_user" {
 
 variable "wp_password" {
   description = "Wordpress password"
-  default = "randompasspart2"
 }
 
 variable "wp_mail" {
   description = "Wordpress email"
-  default = "abctestemail@gmail.com"
 }

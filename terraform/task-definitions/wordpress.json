@@ -1,7 +1,7 @@
 [
     {
         "name": "wordpress",
-        "image": "afiffing/wp-packer:1.1",
+        "image": "afiffing/ansible-nginx-wordpress:1.1",
         "cpu": 10,
         "memory": 300,
         "essential": true,
@@ -10,14 +10,19 @@
                  "hostPort": 80,
                  "containerPort": 80,
                  "protocol": "tcp"
+             },
+             {
+                 "hostPort": 3306,
+                 "containerPort": 3306,
+                 "protocol": "tcp"
              }
          ],
-        "links": [],
+        "links": null,
         "command": [
             "supervisord"
          ],
         "entryPoint": [
-            "/tmp/entrypoint.sh"
+            "/entrypoint.sh"
          ],
         "environment": [
           {
