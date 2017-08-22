@@ -1,6 +1,6 @@
 resource "aws_elb" "default" {
     name               = "wp-elb-tf"
-    subnets            = ["${var.subnet_preconf_id}"]
+    subnets            = ["${aws_subnet.wp-public-tf.id}"]
     security_groups    = ["${aws_security_group.wp-elb-tf.id}"]
 
     listener {
@@ -18,14 +18,12 @@ resource "aws_elb" "default" {
         interval            = 30
     }
 
-      instances                   = ["${aws_instance.ecs-instance01.id}"]
+    instances                   = ["${aws_instance.ecs-instance01.id}"]
       cross_zone_load_balancing   = true
       idle_timeout                = 100
-
 
     tags {
         Name = "wp-elb-tf"
     }
 }
-
 

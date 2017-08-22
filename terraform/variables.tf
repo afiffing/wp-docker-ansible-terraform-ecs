@@ -7,15 +7,6 @@ variable "aws_secret_key" {
   description = "AWS secret key"
 }
 
-variable "vpc_preconf_id" {
-  description = "VPC network"
-}
-
-variable "subnet_preconf_id" {
-  description = "VPC network"
-}
-
-
 variable "vpc_cidr_block" {
   description = "VPC network"
   default     = "172.31.0.0/16"
@@ -28,7 +19,7 @@ variable "public_subnet_cidr_block" {
 
 variable "private_subnet_cidr_block" {
   description = "Private Subnet"
-  default     = "172.31.0.0/20"
+  default     = "172.31.16.0/20"
 }
 
 variable "region" {
@@ -58,13 +49,13 @@ variable "instance_type" {
   default = "t2.micro"
 }
 
+variable "db_instance_type" {
+  description = "RDS instance type"
+  default = "db.t2.micro"
+}
 
 variable "key_name" {
   description = "SSH key name to access the EC2 instances"
-}
-
-variable "db_host" {
-  description = "RDS DB hostname preconfigure"
 }
 
 variable "db_name" {
