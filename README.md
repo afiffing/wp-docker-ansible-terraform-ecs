@@ -1,43 +1,196 @@
- wp-docker-ansible-terraform-ecs
+
+# ⚡️ Docker-Ansible-Nginx-Wordpress-Packer-Terraform-AWSECS ⚡️ 
+
+## Tools used
+
+- Docker
+- Ansible
+- Packer
+- Terraform
+
+## Frameworks & Services used
+
+- Nginx
+- Wordpress
+- AWS
+    - ECS
+    - EC2
+    - RDS
+    - ELB
+    - IAM
+
+## Project Division
+
+1. Packer setup
+2. Terraform setup
+
+## What i have done :
+
+### 1. Packer setup
+
+- Created a base docker alpine linux image ` afiffing/ansible:latest` with ansible installed in it.
+
+- Dockerfile for `afiffing/ansible:latest` is shown below
+
+```
+FROM alpine:latest
+MAINTAINER "Ashish Singh" <afiffing@gmail.com>
  
+RUN set -ex && \
+  buildDeps="python-dev build-base libffi-dev openssl-dev" && \
+  apk add --no-cache $buildDeps python py-pip ca-certificates bash && \
+  pip install --no-cache-dir --upgrade pip && \
+  pip install --no-cache-dir ansible && \
+  apk del --purge $buildDeps
+
+CMD ["ansible"]
+```
+
+- Using the same image `afiffing/ansible:latest` in my [packer.json](https://github.com/afiffing/wp-docker-ansible-terraform-ecs/blob/master/packer/packer.json) file.
+
+- Using previously installed `ansible` in the above mentioned docker image, `nginx` and `wordpress` has been installed and configured.
+
+- Apart from nginx, wordpress and their dependencies.I am using [supervisord](https://github.com/afiffing/wp-docker-ansible-terraform-ecs/tree/master/packer/ansible/roles/supervisord) for initiating multiple process at the boot-up of the container. Read more about [supervisord](http://supervisord.org/).
+
+- Newly configured running container has been pushed to [dockerhub](https://hub.docker.com/).
+
+- Now, terraform will use this new image `afiffing/ansible-nginx-wordpress:1.1` for aws ecs [task-definitions](https://github.com/afiffing/wp-docker-ansible-terraform-ecs/blob/master/terraform/task-definitions/wordpress.json)
+
+### 2. Terraform setup
+
+#### IAM roles & policies
+
+- In order to deploy AWS ECS with EC2 ( ECS instances ).
+    - For EC2 config used [here](https://github.com/afiffing/wp-docker-ansible-terraform-ecs/blob/master/terraform/ec2.tf) : `ecsInstanceRole` :
+```
+{
+"Version": "2012-10-17",
+"Statement": [
+{
+ "Effect": "Allow",
+ "Action": [
+   "ecs:CreateCluster",
+   "ecs:DeregisterContainerInstance",
+   "ecs:DiscoverPollEndpoint",
+   "ecs:Poll",
+   "ecs:RegisterContainerInstance",
+   "ecs:StartTelemetrySession",
+   "ecs:UpdateContainerInstancesState",
+   "ecs:Submit*",
+   "ecr:GetAuthorizationToken",
+   "ecr:BatchCheckLayerAvailability",
+   "ecr:GetDownloadUrlForLayer",
+   "ecr:BatchGetImage",
+   "logs:CreateLogStream",
+   "logs:PutLogEvents"
+ ],
+ "Resource": "*"
+}]}
+
+```
+- Similary `ecsServiceRole` for ECS configuration described here
+
+```
+  {
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Effect": "Allow",
+          "Action": [
+              "ecs:CreateCluster",
+              "ecs:DeregisterContainerInstance",
+              "ecs:DiscoverPollEndpoint",
+              "ecs:Poll",
+              "ecs:RegisterContainerInstance",
+              "ecs:StartTelemetrySession",
+              "ecs:Submit*",
+              "ecs:StartTask",
+              "ecr:GetAuthorizationToken",
+              "ecr:BatchCheckLayerAvailability",
+              "ecr:GetDownloadUrlForLayer",
+              "ecr:BatchGetImage",
+              "ec2:AuthorizeSecurityGroupIngress",
+              "ec2:Describe*",
+              "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+              "elasticloadbalancing:DeregisterTargets",
+              "elasticloadbalancing:RegisterTargets",
+              "elasticloadbalancing:Describe*",
+              "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
+          ],
+          "Resource": "*"
+          }
+        ]
+      }
   
-*  What i have done
-     Packer ansible wordpress docker setup
-    1) created a docker baseimage with ansible installed in it, pushed the same to dockerhub.
-    2) Tried to setup wordpress using the base image defined, got stucked with ansible unarchive of wordpress installation, Work around downloaded and installed wordpress in the same base image. Same update docker base image made public again. 
-    3) At this stage i have packer build of a docker image with ansible,nginx webserver and wordpress installed in it.
-    4) All i have to do is to deploy the same setup on ECS via terraform.
-    5) Configured terraform to create 1 ELB 1 ECS 1 EC2 instance, with security groups for newly created Ec2 instance and for the Elb. 
-       No i already had a RDS mysql running in my free tier account hence didn't create a new one. Same with VPC, routetable and internet gteway, didn't want to disturb my current setup. Neither want to use my official account, as it will be visible in the billing cycle.
+```     
 
+#### How to run this project
+
+- In order to run it you have to run two commands one by one. `packer build packer.json`, It will configure wordpress with nginx, waiting to get deployed over `AWS EC2`.
+
+- Secondly, run terraform to deploy configured docker image on `AWS ECS`.I am passing required credentials on runtime via `CLI`.
+
+- First a dry run for terraform, pretty useful in debugging.
+```
+terraform plan -var 'aws_access_key=yourkey' -var 'aws_secret_key=yourpasskey' -var 'key_name=keypairnameforec2instance' -var 'db_password="password-for-mysqluser"' -var 'wp_password="password-for-wordpressadmin"' -var 'wp_mail=emailaddress' 
+```
+
+- Now, run terraform.
+
+```
+terraform apply -var 'aws_access_key=yourkey' -var 'aws_secret_key=yourpasskey' -var 'key_name=keypairnameforec2instance' -var 'db_password="password-for-mysqluser"' -var 'wp_password="password-for-wordpressadmin"' -var 'wp_mail=emailaddress' 
+```
+
+- Now it will list you out an IP address and a load balancer (`AWS ELB`) domain name.
+
+- Access any of them to go to wordpress website.
+
+### How components interact between each over.
+
+- I have tried to show the components connectivity via a flow diagram.
+
+![Alt text](https://github.com/afiffing/wp-docker-ansible-terraform-ecs/blob/master/components.jpg "Screenshot")
+
+#### How you would have done things to have the best HA/automated architecture?.
+#### Share with us any ideas you have in mind to improve this kind of infrastructure?.
+```
+Tomorrow we want to put this project in production. What would be your advices and choices to achieve that.
+Regarding the infrastructure itself and also external services like the monitoring, ...
+```
+- For this project, Various tools are infused in the setup which is not required. I understand that it was meant to check my understanding and capabilities.
     
-  * How run your project
-    In order to run it you have to just access ELB DNS : wp-elb-tf-2140778452.us-west-2.elb.amazonaws.com
+    - #### Proposed Solution for HA/automated architecture or a production ready environment
 
-  * How components interact between each over
-    ECS -- has container ( docker based images configured to used accordingly here) that needs to be running over Ec2 instance, Now docker base image has nginx and wordpress installed. Ansible make sure that it's task directories have their templates placed as required.
-   
-   RDS mysql db connections and wordpress wp_config entry are done in runtime via terraform json file.
+        - ##### Proposed Solution with RDS
 
-  * What problems did you have
-    First problem i had with ansible unarchive of wordpress.tar.gz file, overcame that with an preinstalled wordpress docker image.
-    Secondly, after completing terraform setup, i forgot to register aws ECR, i.e. container registry, that's a very subtle step which costs me some time. Fixed it.
-    Ecs with ELB requires a EC2servicecontainer IAM role with sufficient permissions i.e. AmazonEC2ContainerServiceRole, otherwise terraform woun't be able to roll out ecs clusters with services.
-    Set up is incomplete, as for now ELB has no registered instance with it, hence ECS shows this error : service wp-ecs-svc-tf was unable to place a task because no container instance met all of its requirements. Reason: No Container Instances were found in your cluster.
-    
-  * How you would have done things to have the best HA/automated architecture
-    Due to time limitation, as i work on saturdays as well. I have been able to configure this setup to till this stage. 
-    For the same deployment i could have gone to packer ansible docker and aws cli setup. No doubt Terraform is such a powerful tool.But  what i have felt while configuring it, is that we really don't need all these tools. It's somehow increasing an unwanted complexity in the entire process.Though i couldn't complete it in time, because of obvious reasons.
-
-  * Share with us any ideas you have in mind to improve this kind of infrastructure.
-   Like i have said, less number of external tools could have made the job easier and fast. Currently it's doable, but can be done with much more ease. 
-    As of now i have hard coded some of the variable in the configuration files, that can be easily be avoided.
-    All these repositories are public : docker and git, vpc's should have been privately configured.
-    Entire set up hasss single entities overall, 1 RDS, 1 ELB With single EC2, Single ECS cluster. This is not favoirabble for production scenario. Multi-AZ RDS, More than one Ec2 instance and ECS cluster configuration.
-  
-
-  * About External Monitring services.
-   Though Cloudwatch is self sufficient in many ways, but since you have asked specifically for external services, i have datadog and Zabbix and nagios as a consideration.
- 
+            - Wordpress Docker Container from hub.docker.com
+            - Multi-AZ RDS
+            - Terraform 
+            - ELB with HTTPS/SSL
+            - AWS Cloudwatch alarms with AWS SES and AWS SNS for monitoring and mailer notifications.
+            - Auto Scaling Group with Autoscaling policies (up and down), for usage demands.
+            - Static content and assests( CSS, JS) on S3 for AWS Cloudfront (CDN) 
+            - Route53 for DNS 
+            - CI/CD : Deployment Immutable deployment stategy: Jenkins Pipeline. ( Build/Test->Stage->Test->Prod)
 
 
+
+        - ##### Proposed Solution without RDS
+
+            - Wordpress Docker Container from hub.docker.com
+            - Mysql Docker Container & Docker Compose + ECS container registery for Mysql and Wordpress Container.
+            - Terraform 
+            - ELB with HTTPS/SSL
+            - AWS Cloudwatch alarms with AWS SES and AWS SNS for monitoring and mailer notifications.
+            - Auto Scaling Group with Autoscaling policies (up and down), for usage demands
+            - Static content and assests( CSS, JS) on S3 for AWS Cloudfront (CDN) 
+            - Route53 for DNS 
+            - CI/CD : Deployment Immutable deployment stategy: Jenkins Pipeline. ( Build/Test->Stage->Test->Prod)
+
+
+#### About External Monitoring services.
+
+- Though AWS Cloudwatch is self sufficient in many ways, but since you have asked specifically for external services, i have datadog and Zabbix and monit as a consideration.
+- Though i prefer Zabbix, Since Zabbix is an independent tool when it comes to multiple cloud vendors, also an open-source project, it's the best fit and efficiently serves my purpose. 
+- One quick look up upon all those running servers, about their running status in a single dashboard.
+- Also, it's quite popular in the open-source community, feasible API, Plugins & integration compatibility with other available resources in the market.
